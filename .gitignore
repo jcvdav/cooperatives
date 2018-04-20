@@ -3,4 +3,7 @@
 .RData
 .Ruserdata
 .Rproj
-.nc
+.nc*.xlsx
+*.nc
+*.Rproj
+*.xls
