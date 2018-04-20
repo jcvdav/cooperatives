@@ -1,0 +1,140 @@
+---
+title: "Untitled"
+author: "Juan Carlos Villaseñor-Derbez"
+date: "20 de abril de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(here)
+  library(raster)
+})
+```
+
+
+# Read the data in
+
+For now, we are not including gear type and range of fishing activity because the y make no sense
+
+## Read coordinate data
+
+```{r}
+coords <- read.csv(here("raw_data", "cooperative_coordinates.csv"),
+                 stringsAsFactors = F,
+                 strip.white = T)
+```
+
+
+## Read number of species data
+
+```{r}
+spp_data <- read.csv(here("raw_data", "spp_by_cooperative.csv"),
+                 stringsAsFactors = F,
+                 strip.white = T)
+```
+
+## Load fishery type
+
+```{r}
+fish_type <- read.csv(here("raw_data", "fishtype.csv"),
+                      stringsAsFactors = F,
+                      strip.white = T)
+```
+ 
+
+## Extract temfepratures
+
+```{r}
+proj2 <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
+data(World)
+World <- as(World, "sf") %>% 
+  sf::st_transform(proj2) %>% 
+  mutate(N = 1) %>% 
+  sf::st_union(by = N) %>% 
+  sf::as_Spatial()
+```
+
+
+```{r}
+rasters <- list.files(pattern = here("raw_data","tsamax"), full.names = T)
+
+r2006 <- raster(here("raw_data", "tsamax2006.nc")) %>% 
+  mean() %>% 
+  rotate() %>% 
+  mask(World, inverse = T)
+
+r2050 <- raster(here("raw_data", "tsamax2050.nc")) %>% 
+  mean() %>% 
+  rotate() %>% 
+  mask(World, inverse = T)
+
+r <- r2050-r2006
+```
+
+```{r}
+saltwater <- coords %>%
+  left_join(fish_type, by = "fishery_id") %>% 
+  filter(!fish_type %in% c("freshwater", "freshwater & diadromous")) %>%
+  group_by(fishery_id) %>% 
+  summarize(lon = mean(lon, na.rm = T), lat = mean(lat, na.rm = T)) %>% 
+  filter(!is.na(lon), !is.na(lat))
+
+xy <- data.frame(X = saltwater$lon, Y = saltwater$lat)
+coordinates(xy) <- c("X", "Y")
+proj4string(xy) <- proj2  ## for example
+xy <- SpatialPointsDataFrame(xy, saltwater, proj4string = proj2)
+```
+
+```{r}
+temps <- raster::extract(r, xy, buffer = 50000, fun = mean)
+```
+
+```{r}
+coords <- cbind(xy, temps)
+colnames(coords@data) <- c("fishery_id", "lon", "lat", "temperature_change")
+coords <- coords@data
+```
+
+## Get all together
+
+```{r}
+coop <- read.csv(here("raw_data", "CoopResilience.csv"),
+                 stringsAsFactors = F,
+                 strip.white = T,
+                 na.strings = c("N/A", "NA")) %>% 
+  mutate(short_catch_use_numeric = case_when(short_catch_use == "subsistence" ~ 1,
+                                             short_catch_use == "local market/subsistence" ~ 1,
+                                             short_catch_use == "local market" ~ 1,
+                                             TRUE ~ 0),
+         short_catch_use_numeric = ifelse(is.na(short_catch_use), NA, short_catch_use_numeric),
+         itq = str_detect(string = catch_share_types, pattern = "itq"),
+         ivq = str_detect(string = catch_share_types, pattern = "ivq"),
+         ieq = str_detect(string = catch_share_types, pattern = "ieq"),
+         iq = str_detect(string = catch_share_types, pattern = "iq"),
+         turf = str_detect(string = catch_share_types, pattern = "turf"),
+         coop = str_detect(string = catch_share_types, pattern = "coop")) %>% 
+  left_join(coords, by = "fishery_id") %>% 
+  left_join(spp_data, by = c("fishery_id", "original_order")) %>%
+  left_join(fish_type, by = "fishery_id") %>% 
+  filter(!fish_type %in% c("freshwater", "freshwater & diadromous")) %>% 
+  select(fishery_id, host_country, target_species, lon, lat, human_development_index, vessels_coop, processed, codified_penalties, cooperative_administration, direct_enforcement, financial_services, information_sharing, percent_of_gdp_from_fishing, short_participants, short_catch_use_numeric, sea_level_vulnerability, sea_temp_vulnerability, ocean_acidification_vulnerability, ozone_uv_vulnerability, recovery_time, temporal_no_take, spatial_no_take, msc_certification, recorded_fishery_closure, poverty_index, institutional_stability, corruption, itq, ivq, ieq, iq, turf, coop, mpa, profit_sharing, coharvest, cooperative_gear_restrictions, cooperative_size_limit, gear_sharing, habitat_restoration, restocking, research_support, recovery_potential, temperature_change, number_of_species)
+
+coop_text <- coop %>%
+  select(fishery_id, host_country, target_species)
+
+coop_numbers <- coop %>%
+  select(-c(host_country, target_species)) %>% 
+  mutate_all(as.numeric)
+```
+
+
+
+
