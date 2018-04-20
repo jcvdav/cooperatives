@@ -16,6 +16,8 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(here)
   library(raster)
+  library(tmap)
+  library(sf)
 })
 ```
 
@@ -132,9 +134,15 @@ coop_text <- coop %>%
 
 coop_numbers <- coop %>%
   select(-c(host_country, target_species)) %>% 
-  mutate_all(as.numeric)
+  mutate_all(as.numeric) %>% 
+  mutate_all(rescale)
 ```
 
+https://www.r-bloggers.com/computing-and-visualizing-pca-in-r/
+
+https://gist.github.com/thigm85/7689508
+
+https://tgmstat.wordpress.com/2013/11/28/computing-and-visualizing-pca-in-r/
 
 
 
