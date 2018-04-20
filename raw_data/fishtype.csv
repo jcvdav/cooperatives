@@ -1,0 +1,104 @@
+original_order,fishery_id,fish_type
+1,1,finfish - reef
+2,1,finfish - reef
+3,2,molluscs
+4,3,crustaceans
+5,3,crustaceans
+6,3,crustaceans
+7,3,crustaceans
+9,5,finfish-benthic
+10,5,finfish-benthic
+11,6,finfish-benthic
+12,7,molluscs
+13,7,finfish - reef
+14,8,crustaceans
+15,9,crustaceans
+16,10,finfish-benthic
+17,11,finfish - pelagic
+18,11,finfish - pelagic
+19,12,molluscs
+20,13,crustaceans
+21,14,finfish - pelagic
+22,15,finfish-benthic
+23,16,molluscs
+24,17,molluscs
+25,18,molluscs
+26,19,molluscs
+27,20,finfish-benthic
+28,21,finfish-benthic
+29,22,molluscs
+30,22,finfish - reef
+31,23,finfish-benthic
+32,24,finfish-benthic
+33,25,finfish-benthic
+34,26,finfish-benthic
+35,27,finfish-benthic
+36,28,finfish - pelagic
+37,29,finfish - pelagic
+38,30,finfish - pelagic
+39,30,finfish-benthic
+40,30,finfish-benthic
+41,31,molluscs
+42,32,molluscs
+43,33,molluscs
+44,34,finfish-benthic
+45,34,finfish-benthic
+46,35,finfish - pelagic
+47,35,finfish - pelagic
+48,35,finfish - pelagic
+49,36,finfish - pelagic
+50,37,molluscs
+51,38,finfish - pelagic
+52,39,finfish-benthic
+53,39,finfish-benthic
+54,40,molluscs
+55,40,molluscs
+56,40,crustaceans
+57,41,finfish - pelagic
+58,42,finfish - pelagic
+59,43,molluscs
+60,44,molluscs
+61,44,molluscs
+62,47,molluscs
+63,47,molluscs
+64,47,molluscs
+65,48,finfish - reef
+66,48,finfish - reef
+67,48,other invertebrates
+68,49,crustaceans
+75,50,molluscs
+76,51,finfish - pelagic
+77,51,finfish - pelagic
+78,51,finfish - pelagic
+79,52,crustaceans
+80,52,crustaceans
+84,53,molluscs
+85,53,molluscs
+86,54,finfish - reef
+87,54,finfish - reef
+88,55,molluscs
+89,56,freshwater & diadromous
+90,57,molluscs
+91,58,finfish - pelagic
+92,59,crustaceans
+93,59,other invertebrates
+94,60,crustaceans
+95,60,crustaceans
+96,60,crustaceans
+97,61,other invertebrates
+100,63,NA
+101,64,freshwater & diadromous
+102,64,freshwater & diadromous
+103,65,freshwater & diadromous
+104,65,freshwater & diadromous
+105,65,freshwater & diadromous
+106,66,molluscs
+107,67,freshwater
+108,67,freshwater
+109,68,molluscs
+110,69,finfish-benthic
+111,69,finfish-benthic
+112,70,freshwater & diadromous
+113,70,freshwater & diadromous
+114,70,freshwater & diadromous
+115,71,crustaceans
