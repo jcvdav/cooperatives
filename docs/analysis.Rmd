@@ -18,6 +18,7 @@ suppressPackageStartupMessages({
   library(raster)
   library(tmap)
   library(sf)
+  library(scales)
 })
 ```
 
@@ -66,9 +67,9 @@ World <- as(World, "sf") %>%
 
 
 ```{r}
-rasters <- list.files(pattern = here("raw_data","tsamax"), full.names = T)
+rasters <- list.files(path = here("raw_data"), pattern = "tsamax", full.names = T)
 
-r2006 <- raster(here("raw_data", "tsamax2006.nc")) %>% 
+rpre <- raster(rasters[1]) %>% 
   mean() %>% 
   rotate() %>% 
   mask(World, inverse = T)
@@ -78,7 +79,7 @@ r2050 <- raster(here("raw_data", "tsamax2050.nc")) %>%
   rotate() %>% 
   mask(World, inverse = T)
 
-r <- r2050-r2006
+r <- r2050-rpre
 ```
 
 ```{r}
@@ -107,6 +108,7 @@ coords <- coords@data
 
 ## Get all together
 
+
 ```{r}
 coop <- read.csv(here("raw_data", "CoopResilience.csv"),
                  stringsAsFactors = F,
@@ -127,16 +129,75 @@ coop <- read.csv(here("raw_data", "CoopResilience.csv"),
   left_join(spp_data, by = c("fishery_id", "original_order")) %>%
   left_join(fish_type, by = "fishery_id") %>% 
   filter(!fish_type %in% c("freshwater", "freshwater & diadromous")) %>% 
-  select(fishery_id, host_country, target_species, lon, lat, human_development_index, vessels_coop, processed, codified_penalties, cooperative_administration, direct_enforcement, financial_services, information_sharing, percent_of_gdp_from_fishing, short_participants, short_catch_use_numeric, sea_level_vulnerability, sea_temp_vulnerability, ocean_acidification_vulnerability, ozone_uv_vulnerability, recovery_time, temporal_no_take, spatial_no_take, msc_certification, recorded_fishery_closure, poverty_index, institutional_stability, corruption, itq, ivq, ieq, iq, turf, coop, mpa, profit_sharing, coharvest, cooperative_gear_restrictions, cooperative_size_limit, gear_sharing, habitat_restoration, restocking, research_support, recovery_potential, temperature_change, number_of_species)
+  dplyr::select(fishery_id, host_country, target_species, lon, lat, human_development_index, vessels_coop, processed, codified_penalties, cooperative_administration, direct_enforcement, financial_services, information_sharing, percent_of_gdp_from_fishing, short_participants, short_catch_use_numeric, sea_level_vulnerability, sea_temp_vulnerability, ocean_acidification_vulnerability, ozone_uv_vulnerability, recovery_time, temporal_no_take, spatial_no_take, msc_certification, recorded_fishery_closure, poverty_index, institutional_stability, corruption, itq, ivq, ieq, iq, turf, coop, mpa, profit_sharing, coharvest, cooperative_gear_restrictions, cooperative_size_limit, gear_sharing, habitat_restoration, restocking, research_support, recovery_potential, temperature_change, number_of_species) %>% 
+  mutate(sea_level_vulnerability = -sea_level_vulnerability,
+         ozone_uv_vulnerability = -ozone_uv_vulnerability,
+         sea_temp_vulnerability = -sea_level_vulnerability,
+         ocean_acidification_vulnerability = - ocean_acidification_vulnerability,
+         recovery_time = - recovery_time,
+         corruption = -corruption,
+         percent_of_gdp_from_fishing = -percent_of_gdp_from_fishing,
+         poverty_index = -poverty_index,
+         short_participants = -short_participants,
+         temperature_change = -temperature_change)
 
 coop_text <- coop %>%
-  select(fishery_id, host_country, target_species)
+  dplyr::select(fishery_id, host_country, target_species, lon, lat)
 
 coop_numbers <- coop %>%
-  select(-c(host_country, target_species)) %>% 
+  dplyr::select(-c(fishery_id, host_country, target_species, lon, lat)) %>% 
   mutate_all(as.numeric) %>% 
   mutate_all(rescale)
+
+coop_clean <- cbind(coop_text, coop_numbers) %>% 
+  mutate(occupational_multiplicity = human_development_index,
+         target_diversity = number_of_species,
+         material_style_of_life = (vessels_coop + processed) / 2,
+         social_capital = (codified_penalties + itq + ivq + ieq + iq + turf + coop + mpa + temporal_no_take + spatial_no_take + msc_certification + institutional_stability + cooperative_administration + direct_enforcement) / 14,
+         subsidies = financial_services,
+         trust = information_sharing,
+         economic_dependence = (percent_of_gdp_from_fishing + short_participants)/2,
+         subsistance_dependence = short_catch_use_numeric,
+         habitat_susceptibility = (sea_level_vulnerability + sea_temp_vulnerability + ocean_acidification_vulnerability +ozone_uv_vulnerability) / 4,
+         # Add Cheung here
+         overexploitation = recorded_fishery_closure,
+         temperature_change,
+         ecological_recovery_potential = recovery_potential,
+         social_adaptive_capacity = (occupational_multiplicity + target_diversity + social_capital + subsidies + trust) / 5,
+         social_sensitivity = (economic_dependence + subsistance_dependence) / 2,
+         ecological_sensitivity = (habitat_susceptibility + overexploitation) / 2, # This is missing spp suscep
+         ecological_exposure = temperature_change,
+         score = social_adaptive_capacity - social_sensitivity - ecological_sensitivity - ecological_exposure - ecological_recovery_potential)
+
 ```
+
+```{r, fig.height = 10, fig.width = 6}
+World2 <- sf::st_as_sf(World)
+
+coop_clean %>% 
+  dplyr::select(lon, lat, social_adaptive_capacity, social_sensitivity, ecological_sensitivity, ecological_exposure, ecological_recovery_potential) %>% 
+  gather(variable, value, -c(lon, lat)) %>% 
+  ggplot() +
+  geom_sf(data = World2) +
+  geom_point(aes(x = lon, y = lat, fill = value), shape = 21, size = 2) +
+  theme_bw() +
+  scale_fill_gradientn(colours = colorRamps::matlab.like(20)) +
+  facet_grid(variable~.)
+```
+
+
+```{r}
+library(corrplot)
+
+coop_clean %>% 
+  dplyr::select(social_adaptive_capacity, social_sensitivity, ecological_sensitivity, ecological_exposure, ecological_recovery_potential) %>% 
+  drop_na() %>% 
+  as.matrix() %>% 
+  cor() %>% 
+  corrplot(type = "lower", method = "ellipse", diag = F)
+```
+
+
 
 https://www.r-bloggers.com/computing-and-visualizing-pca-in-r/
 
