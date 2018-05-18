@@ -1,6 +1,6 @@
 ---
-title: "Cleaning the cooperatives database"
-author: "Cooperative wroking group"
+title: "Cleaning and Analysis Set-Up"
+author: "Cooperatives Working Group"
 date: "last compilation: `r Sys.Date()`"
 output: html_document
 ---
@@ -25,7 +25,7 @@ suppressPackageStartupMessages({
 
 # Read the data in
 
-For now, we are not including gear type and range of fishing activity because they make no sense
+For now, we are not including gear type and range of fishing activity because they make no sense.
 
 ## Read coordinate data
 
@@ -53,7 +53,7 @@ fish_type <- read.csv(here("raw_data", "fishtype.csv"),
 ```
  
 
-## Extract temfepratures
+## Extract temperatures
 
 ```{r}
 proj2 <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
@@ -111,11 +111,11 @@ coop <- read.csv(here("raw_data", "CoopResilience.csv"),
          short_catch_use_numeric = ifelse(is.na(short_catch_use), NA, short_catch_use_numeric),
          itq = str_detect(string = catch_share_types, pattern = "itq"),
          ivq = str_detect(string = catch_share_types, pattern = "ivq"),
-         ieq = str_detect(string = catch_share_types, pattern = "ieq"),
+         ieq = str_detect(string = catch_share_types, pattern = "iteq"),
          iq = str_detect(string = catch_share_types, pattern = "iq"),
          turf = str_detect(string = catch_share_types, pattern = "turf"),
          coop = str_detect(string = catch_share_types, pattern = "coop")) %>% 
-  left_join(coords, by = "fishery_id") %>% 
+    left_join(coords, by = "fishery_id") %>% 
   left_join(spp_data, by = c("fishery_id", "original_order")) %>%
   left_join(fish_type, by = "fishery_id") %>% 
   filter(!fish_type %in% c("freshwater", "freshwater & diadromous")) %>% 
@@ -137,27 +137,71 @@ coop_text <- coop %>%
 coop_numbers <- coop %>%
   dplyr::select(-c(fishery_id, host_country, target_species, lon, lat)) %>% 
   mutate_all(as.numeric) %>% 
-  mutate_all(rescale)
+  mutate_all(rescale) %>% 
+  # Collapsing catch shares proxies into one.
+  mutate(add_catch_shares = (itq + ivq + ieq + iq+ turf+coop)/6) 
 
-coop_clean <- cbind(coop_text, coop_numbers) %>% 
-  mutate(occupational_multiplicity = human_development_index,
+coop_clean <- 
+  cbind(coop_text, coop_numbers) %>% 
+  mutate(
+         # Average proxies into variables.
+         occupational_multiplicity = human_development_index,
          target_diversity = number_of_species,
-         material_style_of_life = (vessels_coop + processed) / 2,
-         social_capital = (codified_penalties + itq + ivq + ieq + iq + turf + coop + mpa + temporal_no_take + spatial_no_take + msc_certification + institutional_stability + cooperative_administration + direct_enforcement) / 14,
+         material_style_of_life = (processed), #/ 2, #vessels_coop + 
+         social_capital = (add_catch_shares+
+                           mpa + 
+                           temporal_no_take +
+                           spatial_no_take + 
+                           msc_certification + 
+                           institutional_stability + 
+                           cooperative_administration + 
+                           direct_enforcement) / 8, #/ 14,codified_penalties + 
          subsidies = financial_services,
          trust = information_sharing,
-         economic_dependence = (percent_of_gdp_from_fishing + short_participants)/2,
+         economic_dependence = (percent_of_gdp_from_fishing),# + short_participants)/2,
          subsistance_dependence = short_catch_use_numeric,
-         habitat_susceptibility = (sea_level_vulnerability + sea_temp_vulnerability + ocean_acidification_vulnerability +ozone_uv_vulnerability) / 4,
+         habitat_susceptibility = (sea_level_vulnerability + 
+                                   sea_temp_vulnerability + 
+                                   ocean_acidification_vulnerability +
+                                   ozone_uv_vulnerability) / 4,
          # Add Cheung here
          overexploitation = recorded_fishery_closure,
          temperature_change,
+         # Average variables into indicators.
          ecological_recovery_potential = recovery_potential,
-         social_adaptive_capacity = (occupational_multiplicity + target_diversity + social_capital + subsidies + trust) / 5,
-         social_sensitivity = (economic_dependence + subsistance_dependence) / 2,
-         ecological_sensitivity = (habitat_susceptibility + overexploitation) / 2, # This is missing spp suscep
+         social_adaptive_capacity = (occupational_multiplicity + 
+                                     target_diversity + 
+                                     social_capital + 
+                                     subsidies + 
+                                     trust) / 5,
+         social_sensitivity = (economic_dependence + 
+                               subsistance_dependence) / 2,
+         ecological_sensitivity = (habitat_susceptibility + 
+                                   overexploitation) / 2, # This is missing spp suscep
          ecological_exposure = temperature_change,
-         score = social_adaptive_capacity - social_sensitivity - ecological_sensitivity - ecological_exposure - ecological_recovery_potential)
+         # Sum indicators into score.
+         score = social_adaptive_capacity - 
+                 social_sensitivity - 
+                 ecological_sensitivity - 
+                 ecological_exposure - 
+                 ecological_recovery_potential)
+
+```
+
+```{r na_count, eval = FALSE}
+
+nacount <-
+  data.frame(t(data.frame(map(coop_clean, ~sum(is.na(.)))))) %>%
+  rename(., nacount =t.data.frame.map.coop_clean...sum.is.na.......)
+
+write.csv(nacount, file = "nacount.csv")
+
+```
+
+```{r na_omit, eval = FALSE}
+
+coop_cleaner <- na.omit(coop_clean[, -(6:55)])
+write.csv(coop_cleaner, file = "coop_cleaner.csv")
 
 ```
 
