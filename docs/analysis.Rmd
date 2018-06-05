@@ -488,6 +488,25 @@ pca_data %>%
   ggbiplot::ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
 ```
 
+```{r}
+library(vegan)
+
+mds <- pca_data %>% 
+  drop_na() %>% 
+  as.matrix() %>% 
+  vegdist() %>% 
+  metaMDS(trace = F)
+
+scores(mds) %>% 
+  as.data.frame() %>% 
+  mutate(id = rownames(.)) %>% 
+  mutate(id = str_remove_all(id, "[0-9]")) %>% 
+  mutate(id = str_remove_all(id, "-")) %>% 
+  ggplot(aes(x = NMDS1, y = NMDS2)) +
+  geom_point(size = 4, aes(fill = id), alpha = 0.8, color = "black", shape = 21) +
+  coord_equal(ratio = 1.5) +
+  scale_fill_viridis_d()
+```
 
 
 
