@@ -2,23 +2,26 @@
 title: "Cleaning and Analysis Set-Up"
 author: "Cooperatives Working Group"
 date: "last compilation: `r Sys.Date()`"
-output: html_document
+output:
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
 # Load packages
 
 ```{r}
 suppressPackageStartupMessages({
-  library(tidyverse)
   library(here)
   library(raster)
   library(tmap)
   library(sf)
   library(scales)
+  library(cowplot)
+  library(tidyverse)
 })
 ```
 
@@ -32,7 +35,8 @@ For now, we are not including gear type and range of fishing activity because th
 ```{r}
 coords <- read.csv(here("raw_data", "cooperative_coordinates.csv"),
                  stringsAsFactors = F,
-                 strip.white = T)
+                 strip.white = T) %>% 
+  filter(!duplicated(.))
 ```
 
 
@@ -51,6 +55,10 @@ fish_type <- read.csv(here("raw_data", "fishtype.csv"),
                       stringsAsFactors = F,
                       strip.white = T)
 ```
+
+## Read species scientific names
+
+## Read species suceptibility (Jones & Cheung)
  
 
 ## Extract temperatures
@@ -78,7 +86,8 @@ saltwater <- coords %>%
   filter(!fish_type %in% c("freshwater", "freshwater & diadromous")) %>%
   group_by(fishery_id) %>% 
   summarize(lon = mean(lon, na.rm = T), lat = mean(lat, na.rm = T)) %>% 
-  filter(!is.na(lon), !is.na(lat))
+  rbind(data.frame(fishery_id = 0, lon = -31.427525, lat = -71.6063907)) %>% 
+  filter(!is.na(lon))
 
 xy <- data.frame(X = saltwater$lon, Y = saltwater$lat)
 coordinates(xy) <- c("X", "Y")
@@ -130,6 +139,8 @@ coop <- read.csv(here("raw_data", "CoopResilience.csv"),
          poverty_index = -poverty_index,
          short_participants = -short_participants,
          temperature_change = -temperature_change)
+
+coop$temperature_change[62] <- coords$temperature_change[coords$fishery_id == 0]
 
 coop_text <- coop %>%
   dplyr::select(original_order, fishery_id, host_country, target_species, lon, lat)
@@ -186,23 +197,11 @@ coop_clean %>% dplyr::select(score) %>% drop_na() %>% dim()
 coop_clean %>% filter(!is.na(score)) %>% dplyr::select(fishery_id) %$% unique(fishery_id) %>% length()
 ```
 
-
-```{r na_count, eval = FALSE}
-
-nacount <-
-  data.frame(t(data.frame(map(coop_clean, ~sum(is.na(.)))))) %>%
-  rename(., nacount =t.data.frame.map.coop_clean...sum.is.na.......) %>% 
-  mutate(ind = rownames(.))
-
-write.csv(nacount, file = "nacount.csv")
-
-```
-
 ```{r, fig.height = 6, fig.width = 8}
 World2 <- sf::st_as_sf(World)
 
 coop_clean %>% 
-  dplyr::select(lon, lat, social_adaptive_capacity, social_sensitivity, ecological_sensitivity, ecological_exposure, ecological_recovery_potential, score) %>% 
+  dplyr::select(lon, lat, social_adaptive_capacity, social_sensitivity, ecological_sensitivity, ecological_exposure, ecological_recovery_potential) %>% 
   gather(variable, value, -c(lon, lat)) %>%
   drop_na() %>% 
   ggplot() +
@@ -211,9 +210,16 @@ coop_clean %>%
   theme_bw() +
   scale_fill_gradientn(colours = colorRamps::matlab.like(20)) +
   facet_wrap(~variable, ncol = 2)
-```
 
-Cambiar Puerto Oscuro a -31.427525,-71.6063907
+coop_clean %>% 
+  dplyr::select(lon, lat, score) %>% 
+  drop_na() %>% 
+  ggplot() +
+  geom_sf(data = World2) +
+  geom_point(aes(x = lon, y = lat, fill = score), shape = 21, size = 2) +
+  theme_bw() +
+  scale_fill_gradientn(colours = colorRamps::matlab.like(20))
+```
 
 ```{r}
 library(corrplot)
@@ -248,28 +254,70 @@ pca_data <- coop_clean %>%
                 sea_temp_vulnerability,
                 ocean_acidification_vulnerability,
                 ozone_uv_vulnerability,
-                recorded_fishery_closure) %>% 
-  drop_na() %>%
-  as.matrix()
-
-prcomp(pca_data) %>% 
-  biplot()
+                recorded_fishery_closure,
+                ecological_exposure,
+                ecological_recovery_potential)
 
 pca_data %>% 
+  drop_na() %>% 
   cor() %>% 
-  corrplot(type = "lower", method = "ellipse", diag = F)
+  corrplot::corrplot(type = "lower", method = "ellipse", diag = F)
 ```
 
+## PCA for Social
 
 ```{r}
+pca_data %>% 
+  dplyr::select(human_development_index,
+                number_of_species,
+                processed,
+                add_catch_shares,
+                mpa,
+                temporal_no_take,
+                spatial_no_take,
+                msc_certification,
+                institutional_stability,
+                cooperative_administration,
+                direct_enforcement,
+                financial_services,
+                information_sharing,
+                percent_of_gdp_from_fishing,
+                short_catch_use_numeric) %>% 
+  drop_na() %>% 
+  as.matrix() %>% 
+  prcomp() %>% 
+  ggbiplot::ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
+```
 
-nas <- numeric(length = 20)
-for (i in 1:20){
+```{r}
+pca_data %>% 
+  dplyr::select(sea_level_vulnerability,
+                sea_temp_vulnerability,
+                ocean_acidification_vulnerability,
+                ozone_uv_vulnerability,
+                recorded_fishery_closure,
+                ecological_exposure,
+                ecological_recovery_potential) %>% 
+  drop_na() %>% 
+  as.matrix() %>% 
+  prcomp() %>% 
+  ggbiplot::ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
+```
+
+# How many points would we have by removing a single variable?
+
+```{r}
+nas <- numeric(length = dim(pca_data)[2])
+
+for (i in 1:length(nas)){
   testing <- pca_data[,-i]
-  nas[i] <- 93 - sum(apply(testing, 1, function(x){any(is.na(x))}))
+  nas[i] <- dim(pca_data)[1] - sum(apply(testing, 1, function(x){any(is.na(x))}))
 }
 
-nas
+nas %>% 
+  magrittr::set_names(value = colnames(pca_data)) %>% 
+  as.data.frame() %>% 
+  magrittr::set_colnames(value = "points")
 ```
 
 
@@ -277,13 +325,168 @@ nas
 coop_clean <- coop_clean %>% 
   dplyr::select(-c(7:48))
 
-write.csv(coop_clean, file = here("data", "clean_cooperatives_data.csv"), row.names = F)
+write.csv(coop_clean, file = here::here("data", "clean_cooperatives_data.csv"), row.names = F)
 ```
 
 
+##### Option B
 
+```{r}
+coop_clean <- cbind(coop_text, coop_numbers) %>%
+  mutate(occupational_multiplicity = human_development_index,
+         target_diversity = number_of_species,
+         material_style_of_life = processed, 
+         social_capital = (#add_catch_shares +
+                             # mpa +
+                             # temporal_no_take +
+                             # spatial_no_take +
+                             msc_certification + 
+                             institutional_stability + 
+                             cooperative_administration # + 
+                             # direct_enforcement
+                             ) / 3,
+         subsidies = financial_services,
+         trust = information_sharing,
+         economic_dependence = percent_of_gdp_from_fishing,
+         subsistance_dependence = short_catch_use_numeric,
+         habitat_susceptibility = (sea_level_vulnerability + 
+                                     sea_temp_vulnerability + 
+                                     ocean_acidification_vulnerability +
+                                     ozone_uv_vulnerability) / 4,
+         overexploitation = recorded_fishery_closure) %>% 
+  mutate(ecological_exposure = temperature_change,
+         ecological_recovery_potential = recovery_potential,
+         social_adaptive_capacity = (occupational_multiplicity + 
+                                       target_diversity + 
+                                       social_capital +
+                                       subsidies #+
+                                       # trust +
+                                       # material_style_of_life
+                                     ) / 4,
+         social_sensitivity = (economic_dependence +
+                                 subsistance_dependence) / 2,
+         ecological_sensitivity = (habitat_susceptibility + 
+                                     overexploitation) / 2, # This is missing spp suscep
+         ecological_vulnerability = ecological_exposure + ecological_sensitivity - ecological_recovery_potential) %>% 
+  mutate(score = ecological_vulnerability + social_sensitivity - social_adaptive_capacity)
 
+coop_clean %>% dplyr::select(score) %>% drop_na() %>% dim()
 
+coop_clean %>% filter(!is.na(score)) %>% dplyr::select(fishery_id) %$% unique(fishery_id) %>% length()
+```
+
+```{r, fig.height = 6, fig.width = 8}
+World2 <- sf::st_as_sf(World)
+
+coop_clean %>% 
+  dplyr::select(lon, lat, social_adaptive_capacity, social_sensitivity, ecological_sensitivity, ecological_exposure, ecological_recovery_potential) %>% 
+  gather(variable, value, -c(lon, lat)) %>%
+  drop_na() %>% 
+  ggplot() +
+  geom_sf(data = World2) +
+  geom_point(aes(x = lon, y = lat, fill = value), shape = 21, size = 2) +
+  theme_bw() +
+  scale_fill_gradientn(colours = colorRamps::matlab.like(20)) +
+  facet_wrap(~variable, ncol = 2)
+
+coop_clean %>% 
+  dplyr::select(lon, lat, score) %>% 
+  drop_na() %>% 
+  ggplot() +
+  geom_sf(data = World2) +
+  geom_point(aes(x = lon, y = lat, fill = score), shape = 21, size = 2) +
+  theme_bw() +
+  scale_fill_gradientn(colours = colorRamps::matlab.like(20))
+```
+
+```{r}
+coop_clean %>% 
+  dplyr::select(social_adaptive_capacity, social_sensitivity, ecological_sensitivity, ecological_exposure, ecological_recovery_potential) %>% 
+  drop_na() %>% 
+  as.matrix() %>% 
+  cor() %>% 
+  corrplot(type = "lower", method = "ellipse", diag = F)
+```
+
+```{r}
+pca_data <- coop_clean %>% 
+  magrittr::set_rownames(value = paste(.$original_order, .$fishery_id, .$host_country, sep = "-")) %>% 
+  dplyr::select(human_development_index,
+                number_of_species,
+                # processed,
+                # add_catch_shares,
+                # mpa,
+                # temporal_no_take,
+                # spatial_no_take,
+                msc_certification,
+                institutional_stability,
+                cooperative_administration,
+                # direct_enforcement,
+                financial_services,
+                # information_sharing,
+                percent_of_gdp_from_fishing,
+                short_catch_use_numeric,
+                sea_level_vulnerability,
+                sea_temp_vulnerability,
+                ocean_acidification_vulnerability,
+                ozone_uv_vulnerability,
+                recorded_fishery_closure,
+                ecological_exposure,
+                ecological_recovery_potential)
+
+pca_data %>% 
+  drop_na() %>% 
+  cor() %>% 
+  corrplot::corrplot(type = "lower", method = "ellipse", diag = F)
+```
+
+## PCA for Social
+
+```{r}
+pca_data %>% 
+  dplyr::select(human_development_index,
+                number_of_species,
+                # processed,
+                # add_catch_shares,
+                # mpa,
+                # temporal_no_take,
+                # spatial_no_take,
+                msc_certification,
+                institutional_stability,
+                cooperative_administration,
+                # direct_enforcement,
+                financial_services,
+                # information_sharing,
+                percent_of_gdp_from_fishing,
+                short_catch_use_numeric) %>% 
+  drop_na() %>% 
+  as.matrix() %>% 
+  prcomp() %>% 
+  ggbiplot::ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
+```
+
+```{r}
+pca_data %>% 
+  dplyr::select(sea_level_vulnerability,
+                sea_temp_vulnerability,
+                ocean_acidification_vulnerability,
+                ozone_uv_vulnerability,
+                recorded_fishery_closure,
+                ecological_exposure,
+                ecological_recovery_potential) %>% 
+  drop_na() %>% 
+  as.matrix() %>% 
+  prcomp() %>% 
+  ggbiplot::ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
+```
+
+```{r}
+pca_data %>% 
+  drop_na() %>% 
+  as.matrix() %>% 
+  prcomp() %>% 
+  ggbiplot::ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
+```
 
 
 
