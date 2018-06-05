@@ -116,10 +116,10 @@ coop <- read.csv(here("raw_data", "CoopResilience.csv"),
          turf = str_detect(string = catch_share_types, pattern = "turf"),
          coop = str_detect(string = catch_share_types, pattern = "coop")) %>% 
     left_join(coords, by = "fishery_id") %>% 
-  left_join(spp_data, by = c("fishery_id", "original_order")) %>%
-  left_join(fish_type, by = "fishery_id") %>% 
+  left_join(spp_data, by = c("original_order")) %>%
+  left_join(fish_type, by = "original_order") %>% 
   filter(!fish_type %in% c("freshwater", "freshwater & diadromous")) %>% 
-  dplyr::select(fishery_id, host_country, target_species, lon, lat, human_development_index, vessels_coop, processed, codified_penalties, cooperative_administration, direct_enforcement, financial_services, information_sharing, percent_of_gdp_from_fishing, short_participants, short_catch_use_numeric, sea_level_vulnerability, sea_temp_vulnerability, ocean_acidification_vulnerability, ozone_uv_vulnerability, recovery_time, temporal_no_take, spatial_no_take, msc_certification, recorded_fishery_closure, poverty_index, institutional_stability, corruption, itq, ivq, ieq, iq, turf, coop, mpa, profit_sharing, coharvest, cooperative_gear_restrictions, cooperative_size_limit, gear_sharing, habitat_restoration, restocking, research_support, recovery_potential, temperature_change, number_of_species) %>% 
+  dplyr::select(original_order, fishery_id, host_country, target_species, lon, lat, human_development_index, vessels_coop, processed, codified_penalties, cooperative_administration, direct_enforcement, financial_services, information_sharing, percent_of_gdp_from_fishing, short_participants, short_catch_use_numeric, sea_level_vulnerability, sea_temp_vulnerability, ocean_acidification_vulnerability, ozone_uv_vulnerability, recovery_time, temporal_no_take, spatial_no_take, msc_certification, recorded_fishery_closure, poverty_index, institutional_stability, corruption, itq, ivq, ieq, iq, turf, coop, mpa, profit_sharing, coharvest, cooperative_gear_restrictions, cooperative_size_limit, gear_sharing, habitat_restoration, restocking, research_support, recovery_potential, temperature_change, number_of_species) %>% 
   mutate(sea_level_vulnerability = -sea_level_vulnerability,
          ozone_uv_vulnerability = -ozone_uv_vulnerability,
          sea_temp_vulnerability = -sea_level_vulnerability,
@@ -132,93 +132,88 @@ coop <- read.csv(here("raw_data", "CoopResilience.csv"),
          temperature_change = -temperature_change)
 
 coop_text <- coop %>%
-  dplyr::select(fishery_id, host_country, target_species, lon, lat)
+  dplyr::select(original_order, fishery_id, host_country, target_species, lon, lat)
 
 coop_numbers <- coop %>%
-  dplyr::select(-c(fishery_id, host_country, target_species, lon, lat)) %>% 
+  dplyr::select(-c(original_order, fishery_id, host_country, target_species, lon, lat)) %>% 
   mutate_all(as.numeric) %>% 
   mutate_all(rescale) %>% 
-  # Collapsing catch shares proxies into one.
-  mutate(add_catch_shares = (itq + ivq + ieq + iq+ turf+coop)/6) 
-
-coop_clean <- 
-  cbind(coop_text, coop_numbers) %>% 
-  mutate(
-         # Average proxies into variables.
-         occupational_multiplicity = human_development_index,
-         target_diversity = number_of_species,
-         material_style_of_life = (processed), #/ 2, #vessels_coop + 
-         social_capital = (add_catch_shares+
-                           mpa + 
-                           temporal_no_take +
-                           spatial_no_take + 
-                           msc_certification + 
-                           institutional_stability + 
-                           cooperative_administration + 
-                           direct_enforcement) / 8, #/ 14,codified_penalties + 
-         subsidies = financial_services,
-         trust = information_sharing,
-         economic_dependence = (percent_of_gdp_from_fishing),# + short_participants)/2,
-         subsistance_dependence = short_catch_use_numeric,
-         habitat_susceptibility = (sea_level_vulnerability + 
-                                   sea_temp_vulnerability + 
-                                   ocean_acidification_vulnerability +
-                                   ozone_uv_vulnerability) / 4,
-         # Add Cheung here
-         overexploitation = recorded_fishery_closure,
-         temperature_change,
-         # Average variables into indicators.
-         ecological_recovery_potential = recovery_potential,
-         social_adaptive_capacity = (occupational_multiplicity + 
-                                     target_diversity + 
-                                     social_capital + 
-                                     subsidies + 
-                                     trust) / 5,
-         social_sensitivity = (economic_dependence + 
-                               subsistance_dependence) / 2,
-         ecological_sensitivity = (habitat_susceptibility + 
-                                   overexploitation) / 2, # This is missing spp suscep
-         ecological_exposure = temperature_change,
-         # Sum indicators into score.
-         score = social_adaptive_capacity - 
-                 social_sensitivity - 
-                 ecological_sensitivity - 
-                 ecological_exposure - 
-                 ecological_recovery_potential)
+  mutate(add_catch_shares = ((itq + ivq + ieq + iq+ turf+coop) > 0) *1) 
 
 ```
+
+```{r}
+coop_clean <- cbind(coop_text, coop_numbers) %>%
+  mutate(occupational_multiplicity = human_development_index,
+         target_diversity = number_of_species,
+         material_style_of_life = processed, 
+         social_capital = (add_catch_shares +
+                             mpa +
+                             temporal_no_take +
+                             spatial_no_take +
+                             msc_certification + 
+                             institutional_stability + 
+                             cooperative_administration + 
+                             direct_enforcement
+                             ) / 7,
+         subsidies = financial_services,
+         trust = information_sharing,
+         economic_dependence = percent_of_gdp_from_fishing,
+         subsistance_dependence = short_catch_use_numeric,
+         habitat_susceptibility = (sea_level_vulnerability + 
+                                     sea_temp_vulnerability + 
+                                     ocean_acidification_vulnerability +
+                                     ozone_uv_vulnerability) / 4,
+         overexploitation = recorded_fishery_closure) %>% 
+  mutate(ecological_exposure = temperature_change,
+         ecological_recovery_potential = recovery_potential,
+         social_adaptive_capacity = (occupational_multiplicity + 
+                                       target_diversity + 
+                                       social_capital +
+                                       subsidies + 
+                                       trust +
+                                       material_style_of_life
+                                     ) / 5,
+         social_sensitivity = (economic_dependence +
+                                 subsistance_dependence) / 2,
+         ecological_sensitivity = (habitat_susceptibility + 
+                                     overexploitation) / 2, # This is missing spp suscep
+         ecological_vulnerability = ecological_exposure + ecological_sensitivity - ecological_recovery_potential) %>% 
+  mutate(score = ecological_vulnerability + social_sensitivity - social_adaptive_capacity)
+
+coop_clean %>% dplyr::select(score) %>% drop_na() %>% dim()
+
+coop_clean %>% filter(!is.na(score)) %>% dplyr::select(fishery_id) %$% unique(fishery_id) %>% length()
+```
+
 
 ```{r na_count, eval = FALSE}
 
 nacount <-
   data.frame(t(data.frame(map(coop_clean, ~sum(is.na(.)))))) %>%
-  rename(., nacount =t.data.frame.map.coop_clean...sum.is.na.......)
+  rename(., nacount =t.data.frame.map.coop_clean...sum.is.na.......) %>% 
+  mutate(ind = rownames(.))
 
 write.csv(nacount, file = "nacount.csv")
 
 ```
 
-```{r na_omit, eval = FALSE}
-
-coop_cleaner <- na.omit(coop_clean[, -(6:55)])
-write.csv(coop_cleaner, file = "coop_cleaner.csv")
-
-```
-
-```{r, fig.height = 10, fig.width = 6}
+```{r, fig.height = 6, fig.width = 8}
 World2 <- sf::st_as_sf(World)
 
 coop_clean %>% 
-  dplyr::select(lon, lat, social_adaptive_capacity, social_sensitivity, ecological_sensitivity, ecological_exposure, ecological_recovery_potential) %>% 
-  gather(variable, value, -c(lon, lat)) %>% 
+  dplyr::select(lon, lat, social_adaptive_capacity, social_sensitivity, ecological_sensitivity, ecological_exposure, ecological_recovery_potential, score) %>% 
+  gather(variable, value, -c(lon, lat)) %>%
+  drop_na() %>% 
   ggplot() +
   geom_sf(data = World2) +
   geom_point(aes(x = lon, y = lat, fill = value), shape = 21, size = 2) +
   theme_bw() +
   scale_fill_gradientn(colours = colorRamps::matlab.like(20)) +
-  facet_grid(variable~.)
+  facet_wrap(~variable, ncol = 2)
 ```
 
+Cambiar Puerto Oscuro a -31.427525,-71.6063907
 
 ```{r}
 library(corrplot)
@@ -232,15 +227,76 @@ coop_clean %>%
 ```
 
 ```{r}
+pca_data <- coop_clean %>% 
+  magrittr::set_rownames(value = paste(.$original_order, .$fishery_id, .$host_country, sep = "-")) %>% 
+  dplyr::select(human_development_index,
+                number_of_species,
+                processed,
+                add_catch_shares,
+                mpa,
+                temporal_no_take,
+                spatial_no_take,
+                msc_certification,
+                institutional_stability,
+                cooperative_administration,
+                direct_enforcement,
+                financial_services,
+                information_sharing,
+                percent_of_gdp_from_fishing,
+                short_catch_use_numeric,
+                sea_level_vulnerability,
+                sea_temp_vulnerability,
+                ocean_acidification_vulnerability,
+                ozone_uv_vulnerability,
+                recorded_fishery_closure) %>% 
+  drop_na() %>%
+  as.matrix()
+
+prcomp(pca_data) %>% 
+  biplot()
+
+pca_data %>% 
+  cor() %>% 
+  corrplot(type = "lower", method = "ellipse", diag = F)
+```
+
+
+```{r}
+
+nas <- numeric(length = 20)
+for (i in 1:20){
+  testing <- pca_data[,-i]
+  nas[i] <- 93 - sum(apply(testing, 1, function(x){any(is.na(x))}))
+}
+
+nas
+```
+
+
+```{r}
+coop_clean <- coop_clean %>% 
+  dplyr::select(-c(7:48))
+
 write.csv(coop_clean, file = here("data", "clean_cooperatives_data.csv"), row.names = F)
 ```
 
 
-https://www.r-bloggers.com/computing-and-visualizing-pca-in-r/
 
-https://gist.github.com/thigm85/7689508
 
-https://tgmstat.wordpress.com/2013/11/28/computing-and-visualizing-pca-in-r/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
