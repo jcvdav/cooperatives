@@ -5,11 +5,36 @@ Research on cooperative vulnerability to Climate Change
 # Structure of the repository
 
 ```
-cooperatives
-├───data
-├───docs
-├───raw_data
-└───scripts
+cooperatives:
+|
+|-- cooperatives.Rproj"            
+|-- data"                          
+|   |__clean_cooperatives_data.csv"
+|   |__tsdiff.rds"                 
+|-- docs"                          
+|   |__analysis.html"              
+|   |__analysis.Rmd"               
+|-- raw_data"                      
+|   |__cooperative_coordinates.csv"
+|   |__CoopResilience.csv"         
+|   |__fishtype.csv"               
+|   |__Jones_Cheung_SDATA.csv"     
+|   |__spp_by_cooperative.csv"     
+|   |__spp_sci_name.csv"           
+|   |__tsamax2006.nc"              
+|   |__tsamax2007.nc"              
+|   |__tsamax2008.nc"              
+|   |__tsamax2009.nc"              
+|   |__tsamax2010.nc"              
+|   |__tsamax2011.nc"              
+|   |__tsamax2012.nc"              
+|   |__tsamax2013.nc"              
+|   |__tsamax2014.nc"              
+|   |__tsamax2015.nc"              
+|   |__tsamax2050.nc"              
+|-- README.md"                     
+|-- scripts"                       
+|   |__change_in_temperature.R" 
 ```
 
 ## Data sources:
