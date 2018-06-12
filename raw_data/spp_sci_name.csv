@@ -1,0 +1,104 @@
+Original_Order,Fishery_ID,Target_species,Complete_Name
+1,1,Jacks,Carangidae spp
+2,1,Bignose unicornfish,Naso vlamingii
+3,2,New Zealand southern scallop,Pecten novaezelandiae
+4,3,Red crab,Chaceon bicolor
+5,3,Spider crab,Jacquinotia  edwardsii
+6,3,King crab,Lithodes murrayi
+7,3,King crab,Neolithodes brodiei
+9,5,Surmullet,Mullus surmuletus
+10,5,Porgy,Pagrus pagrus
+11,6,Cod - Georges Bank,Gadus morhua
+12,7,Brown mussel,Modiolus metcalfei
+13,7,Rabbitfish,Siganus corallinus
+14,8,Northern shrimp,Pandalus borealis
+15,9,Penaeid shrimp,Penaues indicus
+16,10,Walleye pollock,Theragra chalcogramma
+17,11,Anchovies,Stolephorus heterolobus
+18,11,Big eye tuna,Thunnus obesus
+19,12,Paua,Haliotis iris
+20,13,Sakuraebi,Sergia lucens
+21,14,North Sea herring,Clupea harengus
+22,15,Walleye pollock,Theragra chalcogramma
+23,16,Brown mussel,Perna perna
+24,17,Geoduck,Panopea abrupta
+25,18,Black-lip abalone,Haliotis rubra
+26,19,Black-lip abalone,Haliotis rubra
+27,20,Cod,Gadus morhua
+28,21,Cod,Gadus morhua
+29,22,Invertebrates,Tridacna derasa
+30,22,Finfish,
+31,23,Cod,Gadus morhua
+32,24,Cod,Gadus morhua
+33,25,Summer flounder,Paralichthys dentatus
+34,26,Cod,Gadus morhua
+35,27,Cod,Gadus morhua
+36,28,Pacific whiting,Merluccius productus
+37,29,Pacific herring,Clupea harengus pallasi
+38,30,Cod - Pacific,Gadus macrocephalus
+39,30,Yellowfin sole,Limanda  aspera
+40,30,Atka mackerel,Pleurogrammus  monopterygius
+41,31,Manila clam,Ruditapes  philippinarum
+42,32,Octopus,Octopus cyanea
+43,33,Ben Tre hard clams,Meretrix  lyrata
+44,34,Northern rockfish,Sebastes polyspinis
+45,34,Pacific Ocean perch,Sebastes  alutus
+46,35,Wahoo,Acanthocybium  solandri
+47,35,Mahi Mahi,Coryphaena  hippurus
+48,35,Skipjack tuna (bonita),Katsuwonus  pelamis
+49,36,Alaska pollock,Theragra chalcogramma
+50,37,Geoduck (Almeja),Panopea globosa
+51,38,Alaska pollock,Theragra chalcogramma
+52,39,Northern rockfish,Sebastes polyspinis
+53,39,Pacific Ocean perch,Sebastes  alutus
+54,40,Abulon Amarillo,Haliotis corrugata
+55,40,Abulon Azul,Haliotis fulgens
+56,40,Spiny lobster,Panulirus interruptus
+57,41,Alaska pollock,Theragra chalcogramma
+58,42,Alaska pollock,Theragra chalcogramma
+59,43,Ben Tre hard clams,Meretrix  lyrata
+60,44,Callo de hacha (Pen shell),Atrina tuberculosa
+61,44,Callo de hacha / Pen Shell,Pinna  rugosa
+62,47,Loco,Concholepas concholepas
+63,47,Loco,Concholepas concholepas
+64,47,Lapas,Fissurella spp.
+65,48,Yellow-tailed emperor,Lethrinus atkinsoni
+66,48,Blackspot emperor,Lethrinus harak
+67,48,Cake urchin,Tripneustes gratilla
+68,49,Caribbean spiny lobster,Panulirus argus
+75,50,Oyster,Crassostrea rhizophorae
+76,51,Sardinella,Sardinella brasiliensis
+77,51,Little Tuna,Euthynnus alleteratus
+78,51,Chub Mackerel,Scomber  japonicus
+79,52,Brown shrimp,Farfantepenaeus  californiensis
+80,52,Blue Shrimp,Litopenaeus  stylirostris
+84,53,Topshell,Batillus cornutus
+85,53,Abalone,Haliotis  spp
+86,54,Acanthuridae,Acanthuridae
+87,54,Mulllidae (goatfish),Mullidae
+88,55,Tehuelche scallop,Aequipecten tehuelchus
+89,56,Bonga shad,Ethmalosa fimbriata
+90,57,mangrove cockle,Anadara tuberulosa
+91,58,King fish,Scomberomorus  commerson
+92,59,Carribean Spiny Lobster,Panuliris  argus
+93,59,Queen Conch,Strombus  gigas
+94,60,Kadal Shrimp,Metapenaeus  dobsoni
+95,60,Speckled Shrimp,Metapenaeus  monoceros
+96,60,Indian White Prawn,Paeneus  indicus
+97,61,white-spined sea urchin,Tripneustes  ventricosus
+100,63,,
+101,64,Gamitana,Colossoma macropomum
+102,64,Paiche,Arapaima gigas
+103,65,Pejerrey,Odontesthes bonaerensis
+104,65,,Orestias agassii
+105,65,ipsi,Orestias ipsi
+106,66,Black Clam,Villorita  cyprinoides
+107,67,Tilapia,Oreochromis shiranus
+108,67,Straightfin Barb,
+109,68,Bonga,Ethmalosa  fimbriata
+110,69,Dover Sole,Solea solea
+111,69,Plaice,Pleuronectes platessa
+112,70,Nile Perch,Lates  niloticus
+113,70,Dagaa,Rastrineobola argentea
+114,70,Nile Tilapia,Oreochromis niloticus
+115,71,Snow Crab,Chionoecetes opilio
