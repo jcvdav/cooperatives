@@ -1,19 +1,18 @@
 ---
 title: "Cleaning and Analysis Set-Up"
 author: "Cooperatives Working Group"
-date: "last compilation: `r Sys.Date()`"
+date: "last compilation: 2018-12-19"
 output:
   html_document:
     code_folding: hide
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
-```
+
 
 # Load packages
 
-```{r}
+
+```r
 suppressPackageStartupMessages({
   library(here)
   library(raster)
@@ -28,7 +27,8 @@ suppressPackageStartupMessages({
 
 # Read fish type data
 
-```{r}
+
+```r
 fish_type <- read.csv(here("raw_data", "fishtype.csv"),
                       stringsAsFactors = F,
                       strip.white = T)
@@ -36,7 +36,8 @@ fish_type <- read.csv(here("raw_data", "fishtype.csv"),
 
 ## Read coordinate data
 
-```{r}
+
+```r
 coords <- read.csv(here("raw_data", "cooperative_coordinates.csv"),
                  stringsAsFactors = F,
                  strip.white = T) %>% 
@@ -45,7 +46,8 @@ coords <- read.csv(here("raw_data", "cooperative_coordinates.csv"),
 
 ### Read species suceptibility (Jones & Cheung)
 
-```{r}
+
+```r
 jones_cheung <- read.csv(here("raw_data", "Jones_Cheung_SDATA.csv"))
 
 jones_cheung_genus <- jones_cheung %>% 
@@ -57,7 +59,8 @@ jones_cheung_genus <- jones_cheung %>%
 
 ### Read species scientific names and generate species suceptibility
 
-```{r}
+
+```r
 species_suceptibility <- read.csv(here("raw_data", "spp_sci_name.csv"))  %>% 
   mutate(genus = stringr::str_extract(string = Complete_Name, pattern = "([^\\s]+)")) %>% 
   left_join(jones_cheung) %>% 
@@ -69,7 +72,8 @@ species_suceptibility <- read.csv(here("raw_data", "spp_sci_name.csv"))  %>%
  
 ## Extract temperatures
 
-```{r}
+
+```r
 proj2 <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
 data(World)
 World <- as(World, "sf") %>% 
@@ -80,13 +84,15 @@ World <- as(World, "sf") %>%
 ```
 
 
-```{r}
+
+```r
 # The script in scripts/change_in_temperature produces this RDS file. Run from command line for faster performance
 
 r <- readRDS(file = here("data", "tsdiff.rds"))
 ```
 
-```{r}
+
+```r
 saltwater <- coords %>%
   left_join(fish_type, by = "fishery_id") %>% 
   filter(!fish_type %in% c("freshwater", "freshwater & diadromous")) %>%
@@ -101,11 +107,13 @@ proj4string(xy) <- proj2  ## for example
 xy <- SpatialPointsDataFrame(xy, saltwater, proj4string = proj2)
 ```
 
-```{r}
+
+```r
 temps <- raster::extract(r, xy, buffer = 50000, fun = mean)
 ```
 
-```{r}
+
+```r
 coords <- cbind(xy, temps)
 colnames(coords@data) <- c("fishery_id", "lon", "lat", "temperature_change")
 coords <- coords@data
@@ -113,8 +121,8 @@ coords <- coords@data
 
 ## Get all together
 
-```{r}
 
+```r
 coop <- read.csv(here("raw_data", "master_coop.csv"),
                  stringsAsFactors = F,
                  strip.white = T,
@@ -136,10 +144,10 @@ coop_numbers <- coop %>%
   dplyr::select(-c(original_order, fishery_id, host_country, target_species, lon, lat)) %>% 
   mutate_all(as.numeric) %>% 
   mutate_all(rescale) 
-
 ```
 
-```{r}
+
+```r
 coop_clean <- cbind(coop_text, coop_numbers) %>%
          # Variables
   mutate(social_capital = (programs_for_coop_formation + number_coop_behaviors + umbrella_organization)/3,
@@ -170,7 +178,13 @@ coop_clean %>%
   dplyr::select(score) %>%
   drop_na() %>%
   dim()
+```
 
+```
+## [1] 12  1
+```
+
+```r
 coop_clean %>%
   filter(!is.na(score)) %>%
   dplyr::select(fishery_id) %$%
@@ -178,7 +192,12 @@ coop_clean %>%
   length()
 ```
 
-```{r, fig.height = 6, fig.width = 8}
+```
+## [1] 9
+```
+
+
+```r
 World2 <- sf::st_as_sf(World)
 
 coop_clean %>% 
@@ -191,7 +210,11 @@ coop_clean %>%
   theme_bw() +
   scale_fill_gradientn(colours = colorRamps::matlab.like(20)) +
   facet_wrap(~variable, ncol = 2)
+```
 
+<img src="analysis_files/figure-html/unnamed-chunk-13-1.png" width="768" />
+
+```r
 coop_clean %>% 
   dplyr::select(lon, lat, ecological_vulnerability) %>% 
   gather(variable, value, -c(lon, lat)) %>%
@@ -202,7 +225,11 @@ coop_clean %>%
   theme_bw() +
   scale_fill_gradientn(colours = colorRamps::matlab.like(20)) +
   facet_wrap(~variable, ncol = 2)
+```
 
+<img src="analysis_files/figure-html/unnamed-chunk-13-2.png" width="768" />
+
+```r
 coop_clean %>% 
   dplyr::select(lon, lat, score) %>% 
   drop_na() %>% 
@@ -213,14 +240,20 @@ coop_clean %>%
   scale_fill_gradientn(colours = colorRamps::matlab.like(20))
 ```
 
-```{r}
+<img src="analysis_files/figure-html/unnamed-chunk-13-3.png" width="768" />
+
+
+```r
 coop_clean %>% 
   dplyr::select(social_adaptive_capacity, social_sensitivity, ecological_sensitivity, ecological_exposure, ecological_recovery_potential) %>% 
   drop_na() %>% plot()
 ```
 
+<img src="analysis_files/figure-html/unnamed-chunk-14-1.png" width="672" />
 
-```{r}
+
+
+```r
 library(corrplot)
 
 coop_clean %>% 
@@ -231,7 +264,10 @@ coop_clean %>%
   corrplot(type = "lower", method = "ellipse", diag = F)
 ```
 
-```{r}
+<img src="analysis_files/figure-html/unnamed-chunk-15-1.png" width="672" />
+
+
+```r
 pca_data <- coop_clean %>% 
   magrittr::set_rownames(value = paste(.$original_order, .$fishery_id, .$host_country, sep = "-")) %>% 
   dplyr::select(programs_for_coop_formation,
@@ -264,9 +300,12 @@ pca_data %>%
   corrplot::corrplot(type = "lower", method = "ellipse", diag = F)
 ```
 
+<img src="analysis_files/figure-html/unnamed-chunk-16-1.png" width="672" />
+
 ## PCA for Social
 
-```{r}
+
+```r
 pca_data %>% 
   dplyr::select(programs_for_coop_formation,
                 number_coop_behaviors,
@@ -288,7 +327,10 @@ pca_data %>%
   ggbiplot::ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
 ```
 
-```{r, eval = F}
+<img src="analysis_files/figure-html/unnamed-chunk-17-1.png" width="672" />
+
+
+```r
 pca_data %>% 
   dplyr::select(vulnerability,
                 sea_level_vulnerability,
@@ -306,7 +348,8 @@ pca_data %>%
 
 # How many points would we have by removing a single variable?
 
-```{r}
+
+```r
 nas <- numeric(length = dim(pca_data)[2])
 
 for (i in 1:length(nas)){
@@ -320,8 +363,36 @@ nas %>%
   magrittr::set_colnames(value = "points")
 ```
 
+```
+##                                   points
+## programs_for_coop_formation           13
+## number_coop_behaviors                 12
+## umbrella_organization                 12
+## number_of_species                     12
+## msc_certification                     12
+## information_support                   16
+## stock_assesment                       12
+## financial_services                    12
+## legal_gov_support                     12
+## enforcement_gov_support               12
+## poverty_index                         12
+## percent_of_gdp_from_fishing           12
+## short_catch_use_numeric               12
+## short_participants                    24
+## sea_level_vulnerability               12
+## sea_temp_vulnerability                12
+## ocean_acidification_vulnerability     12
+## ozone_uv_vulnerability                12
+## recorded_closure                      12
+## vulnerability                         17
+## temperature_change                    14
+## recovery_potential                    12
+## mpa                                   13
+```
 
-```{r}
+
+
+```r
 coop_clean <- coop_clean %>% 
   dplyr::select(-c(7:48))
 
