@@ -248,17 +248,20 @@ coop_clean %>%
 
 ```{r}
 pca_data <- coop_clean %>% 
-  magrittr::set_rownames(value = paste(.$original_order, .$fishery_id, .$host_country, sep = "-")) %>% 
+  magrittr::set_rownames(value = paste(.$original_order,
+                                       .$fishery_id,
+                                       .$host_country,
+                                       sep = "-")) %>% 
   dplyr::select(programs_for_coop_formation,
                 number_coop_behaviors,
                 umbrella_organization,
                 number_of_species,
                 msc_certification,
-                information_support, 
+                gov_info_support, 
                 stock_assesment,
-                financial_services,
-                legal_gov_support,
-                enforcement_gov_support, 
+                gov_financial_services,
+                # legal_gov_support,
+                # enforcement_gov_support, 
                 poverty_index,
                 percent_of_gdp_from_fishing,
                 short_catch_use_numeric,
@@ -288,11 +291,11 @@ pca_data %>%
                 umbrella_organization,
                 number_of_species,
                 msc_certification,
-                information_support, 
+                gov_info_support, 
                 stock_assesment,
-                financial_services,
-                legal_gov_support,
-                enforcement_gov_support, 
+                gov_financial_services,
+                # legal_gov_support,
+                # enforcement_gov_support, 
                 poverty_index,
                 percent_of_gdp_from_fishing,
                 short_catch_use_numeric,
@@ -310,9 +313,10 @@ pca_data %>%
                 sea_temp_vulnerability,
                 ocean_acidification_vulnerability,
                 ozone_uv_vulnerability,
-                recorded_closure,
-                ecological_exposure,
-                ecological_recovery_potential) %>% 
+                recorded_closure#,
+                # ecological_exposure,
+                # ecological_recovery_potential
+                ) %>% 
   drop_na() %>% 
   as.matrix() %>% 
   prcomp() %>% 

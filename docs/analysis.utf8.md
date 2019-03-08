@@ -1,7 +1,7 @@
 ---
 title: "Cleaning and Analysis Set-Up"
 author: "Cooperatives Working Group"
-date: "last compilation: 2018-12-19"
+date: "last compilation: 2019-03-08"
 output:
   html_document:
     code_folding: hide
@@ -127,8 +127,22 @@ coop <- read.csv(here("raw_data", "master_coop.csv"),
                  stringsAsFactors = F,
                  strip.white = T,
                  na.strings = c("N/A", "NA", "999")) %>% 
-  dplyr::select(fishery_id= Fishery_ID, original_order = Original_Order, target_species= Target_species, host_country = Host_Country, fish_type = Fish_type, number_of_species= Number_of_species,  programs_for_coop_formation= Programs_for_Co_op_Formation, coop_marketing= Marketing, coop_profit_sharing= Profit_Sharing, coop_coordinated_harvest = co_harvest, coop_administration= Cooperative_Administration, coop_catch_limits = Cooperative_TAC, coop_gear_restrictions = Cooperative_Gear_Restrictions, coop_size_limits = Cooperative_Size_Limit, coop_gear_sharing= Gear_sharing, coop_enforcement= Direct_Enforcement, coop_codified_penalties = Codified_Penalties, coop_temporal_no_take = Temporal_No_Take, coop_spatial_no_take = Spatial_No_Take,  coop_restocking = Restocking, coop_habitat_restoration= Habitat_Restoration, coop_gear_shift= Gear_Shift, coop_bycatch_avoidance= By_catch_avoidance, coop_research_support= Research_support, coop_information_sharing = Information_sharing, umbrella_organization= Umbrella_Organization,  msc_certification = MSC_certification, information_support = Information_support, stock_assesment= Stock_assessment_, financial_services= Financial_Services, legal_gov_support = legal_protection__standing, enforcement_gov_support = Enforcement_, poverty_index = Poverty_index_, percent_of_gdp_from_fishing= A__of_GDP_from_Fishing, short_catch_use = Short_catch_use, short_participants = Short_participants, recorded_closure = Recorded_Fishery_Closure, mpa, sea_level_vulnerability, ozone_uv_vulnerability, sea_temp_vulnerability, ocean_acidification_vulnerability, ozone_uv_vulnerability, recovery_time, recovery_potential) %>% 
-  mutate(poverty_index= ifelse(is.na(poverty_index), 0, poverty_index), short_catch_use_numeric = case_when(short_catch_use == "Subsistence" ~ 1,short_catch_use == "Local Market / Subsistence" ~ 1,short_catch_use == "Local Market" ~ 1, TRUE ~ 0), short_catch_use_numeric = ifelse(is.na(short_catch_use), NA, short_catch_use_numeric), number_coop_behaviors = rowSums(.[8:25], na.rm=TRUE)) %>% 
+  dplyr::select(fishery_id= Fishery_ID, original_order = Original_Order, target_species= Target_species, host_country = Host_Country, fish_type = Fish_type, number_of_species= Number_of_species,  programs_for_coop_formation= Programs_for_Co_op_Formation, coop_marketing= Marketing, coop_profit_sharing= Profit_Sharing, coop_coordinated_harvest = co_harvest, coop_administration= Cooperative_Administration, coop_catch_limits = Cooperative_TAC, coop_gear_restrictions = Cooperative_Gear_Restrictions, coop_size_limits = Cooperative_Size_Limit, coop_gear_sharing= Gear_sharing, coop_enforcement= Direct_Enforcement, coop_codified_penalties = Codified_Penalties, coop_temporal_no_take = Temporal_No_Take, coop_spatial_no_take = Spatial_No_Take,  coop_restocking = Restocking, coop_habitat_restoration= Habitat_Restoration, coop_gear_shift= Gear_Shift, coop_bycatch_avoidance= By_catch_avoidance, coop_research_support= Research_support, coop_information_sharing = Information_sharing, gov_legal_protection = legal_protection__standing, gov_enforcement_support = Enforcement_, gov_support_voluntary_reg = Support_of_Voluntary_Regs, gov_financial_services= Financial_Services, gov_info_support = Information_support, gov_conditions = Conditions_for_cooperative_exist, umbrella_organization= Umbrella_Organization,  msc_certification = MSC_certification, stock_assesment= Stock_assessment_, open_access = Open_access, poverty_index = Poverty_index_, hdi = Human_Development_Index, institutional_stability = Institutional_stability, rule_of_law = Rule_of_law, contract_enforcement_rank = Contract_enforcement_Rank, percent_of_gdp_from_fishing= A__of_GDP_from_Fishing, short_catch_use = Short_catch_use, short_participants = Short_participants, catch_shares = Catch_shares, gear_type = Gear_type, coop_formation_date= Co_op_form_date, recorded_closure = Recorded_Fishery_Closure, mpa, sea_level_vulnerability, ozone_uv_vulnerability, sea_temp_vulnerability, ocean_acidification_vulnerability, ozone_uv_vulnerability, recovery_time, recovery_potential) %>% 
+  mutate(
+    # no poverty index for developed countries so for now I'm replacing them with a zero. We may need to look for updated values.
+    poverty_index= ifelse(is.na(poverty_index), 0, poverty_index), 
+    # transforming catch use for subsistance in numeric
+    short_catch_use_numeric = case_when(short_catch_use == "Subsistence" ~ 1,short_catch_use == "Local Market / Subsistence" ~ 1,short_catch_use == "Local Market" ~ 1, TRUE ~ 0), short_catch_use_numeric = ifelse(is.na(short_catch_use), NA, short_catch_use_numeric), 
+    # creating a variable that adds the number of known coop behaviors (NAs are not considered)
+    number_coop_behaviors = rowSums(.[8:25], na.rm=TRUE), 
+    # creating a variable that adds the number of services known to be provided by the goverment (NAs are not considered)
+     number_gov_services = rowSums(.[26:31], na.rm=TRUE),
+    # creating a binary variable for more than one type of fishing gear (note that these are prodiminant fishing gears based on Ovando et al., 2013 and they described artisanal as being a variety of artisanal type fishing methods) 
+   multiple_gears = ifelse(gear_type %in% c("Artisanal", "Gillnet / Entangling net / Long-line", "Artisanal / Dredge", "Artisanal / Hand", "Seine, artisanal", "Trawl / Hook and line", "Artisanal / Spear", "Trawl / Fixed gear", "Artisianal", "Dive, traps"), 1, ifelse(gear_type == "", NA, 0)), 
+   # how old is the cooperative? (I'm assuming they are still operating bt 2013, when the paper was published)
+   years_coop = 2013 - coop_formation_date, 
+   # Is the fishery being managed?The opposite of OA
+  managed_fishery = ifelse(open_access == 1, 0, 1)) %>% 
   filter(!fish_type %in% c("Freshwater", "Freshwater & Diadromous")) %>% 
   left_join(coords, by = "fishery_id") %>%
   left_join(species_suceptibility, by = 'original_order') %>% 
@@ -149,27 +163,28 @@ coop_numbers <- coop %>%
 
 ```r
 coop_clean <- cbind(coop_text, coop_numbers) %>%
-         # Variables
-  mutate(social_capital = (programs_for_coop_formation + number_coop_behaviors + umbrella_organization)/3,
-         diversification = number_of_species,
-         change_anticipation_adaptation = (msc_certification + information_support + stock_assesment)/3,
-         govermental_support = (financial_services + legal_gov_support + enforcement_gov_support)/3, 
-         material_style_of_life = - poverty_index, 
+         # Indicators
+  mutate(social_capital = (hdi +  number_coop_behaviors + umbrella_organization)/3,
+         diversification = (number_of_species + multiple_gears)/2,
+         change_anticipation_adaptation = (msc_certification + stock_assesment)/2,
+         govermental_support = (number_gov_services + rule_of_law + contract_enforcement_rank)/3, 
+         material_style_of_life =- poverty_index, 
          economic_dependence = percent_of_gdp_from_fishing, 
          food_dependence = short_catch_use_numeric, 
-         number_people_depending = short_participants,
+         #number_people_depending = short_participants,
          habitat_susceptibility = sea_temp_vulnerability,
          overfishing = recorded_closure, 
          species_suceptibility = vulnerability, 
          temperature_change = temperature_change,
          recovery_potential = recovery_potential, # Recovery potential puede venir de SST recov
          mpa= mpa, 
+         managed_fishery = managed_fishery,
          # Indicators
          social_adaptive_capacity = (social_capital + diversification + change_anticipation_adaptation + govermental_support + material_style_of_life)/5, 
-         social_sensitivity = (economic_dependence + food_dependence + number_people_depending)/3, 
+         social_sensitivity = (economic_dependence + food_dependence)/2, 
          ecological_exposure = temperature_change,
-         ecological_sensitivity = (habitat_susceptibility + overfishing + species_suceptibility)/3, 
-         ecological_recovery_potential = (recovery_potential + mpa)/2,
+         ecological_sensitivity = (habitat_susceptibility + species_suceptibility + overfishing)/3, 
+         ecological_recovery_potential = (recovery_potential + managed_fishery)/2,
          ecological_vulnerability = ecological_exposure + ecological_sensitivity - ecological_recovery_potential, 
          # Final score
   score = ecological_vulnerability + social_sensitivity - social_adaptive_capacity)
@@ -181,7 +196,7 @@ coop_clean %>%
 ```
 
 ```
-## [1] 12  1
+## [1] 41  1
 ```
 
 ```r
@@ -193,7 +208,7 @@ coop_clean %>%
 ```
 
 ```
-## [1] 9
+## [1] 31
 ```
 
 
@@ -269,17 +284,20 @@ coop_clean %>%
 
 ```r
 pca_data <- coop_clean %>% 
-  magrittr::set_rownames(value = paste(.$original_order, .$fishery_id, .$host_country, sep = "-")) %>% 
+  magrittr::set_rownames(value = paste(.$original_order,
+                                       .$fishery_id,
+                                       .$host_country,
+                                       sep = "-")) %>% 
   dplyr::select(programs_for_coop_formation,
                 number_coop_behaviors,
                 umbrella_organization,
                 number_of_species,
                 msc_certification,
-                information_support, 
+                gov_info_support, 
                 stock_assesment,
-                financial_services,
-                legal_gov_support,
-                enforcement_gov_support, 
+                gov_financial_services,
+                # legal_gov_support,
+                # enforcement_gov_support, 
                 poverty_index,
                 percent_of_gdp_from_fishing,
                 short_catch_use_numeric,
@@ -312,11 +330,11 @@ pca_data %>%
                 umbrella_organization,
                 number_of_species,
                 msc_certification,
-                information_support, 
+                gov_info_support, 
                 stock_assesment,
-                financial_services,
-                legal_gov_support,
-                enforcement_gov_support, 
+                gov_financial_services,
+                # legal_gov_support,
+                # enforcement_gov_support, 
                 poverty_index,
                 percent_of_gdp_from_fishing,
                 short_catch_use_numeric,
@@ -337,9 +355,10 @@ pca_data %>%
                 sea_temp_vulnerability,
                 ocean_acidification_vulnerability,
                 ozone_uv_vulnerability,
-                recorded_closure,
-                ecological_exposure,
-                ecological_recovery_potential) %>% 
+                recorded_closure#,
+                # ecological_exposure,
+                # ecological_recovery_potential
+                ) %>% 
   drop_na() %>% 
   as.matrix() %>% 
   prcomp() %>% 
@@ -368,15 +387,13 @@ nas %>%
 ## programs_for_coop_formation           13
 ## number_coop_behaviors                 12
 ## umbrella_organization                 12
-## number_of_species                     12
+## number_of_species                     13
 ## msc_certification                     12
-## information_support                   16
+## gov_info_support                      16
 ## stock_assesment                       12
-## financial_services                    12
-## legal_gov_support                     12
-## enforcement_gov_support               12
+## gov_financial_services                12
 ## poverty_index                         12
-## percent_of_gdp_from_fishing           12
+## percent_of_gdp_from_fishing           13
 ## short_catch_use_numeric               12
 ## short_participants                    24
 ## sea_level_vulnerability               12
@@ -387,7 +404,7 @@ nas %>%
 ## vulnerability                         17
 ## temperature_change                    14
 ## recovery_potential                    12
-## mpa                                   13
+## mpa                                   17
 ```
 
 
