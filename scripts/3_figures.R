@@ -149,7 +149,7 @@ pca_data %>%
   cor() %>% 
   corrplot::corrplot(type = "lower", method = "ellipse", diag = F)
 
-pca_data %>%
+soc_biplot <- pca_data %>%
   dplyr::select(social_capital,
                 diversification,
                 change_anticipation_adaptation,
@@ -162,8 +162,13 @@ pca_data %>%
   prcomp() %>% 
   ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
 
+ggsave(plot = soc_biplot,
+       filename = here("docs", "img", "soc_biplot.png"),
+       width = 5,
+       height = 5)
 
-pca_data %>% 
+
+ecol_biplot <- pca_data %>% 
   dplyr::select(sea_temp_vulnerability,
                 overfishing,
                 species_suceptibility,
@@ -176,7 +181,10 @@ pca_data %>%
   prcomp() %>% 
   ggbiplot::ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
 
-
+ggsave(plot = ecol_biplot,
+       filename = here("docs", "img", "ecol_biplot.png"),
+       width = 5,
+       height = 5)
 
 
 
