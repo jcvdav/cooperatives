@@ -1,5 +1,4 @@
 # figures
-library(here)
 library(ggbiplot)
 library(startR)
 library(corrplot)
@@ -7,11 +6,21 @@ library(rnaturalearth)
 library(sf)
 library(cowplot)
 library(ggridges)
+library(here)
 library(tidyverse)
 
 update_geom_defaults(geom = "sf", new = list(fill = "gray90",
                                              color = "black",
-                                             size = 1))
+                                             size = 0.1))
+
+proj2 <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
+
+coast <- ne_countries(scale = "small",
+                      type = "countries",
+                      returnclass = "sf") %>% 
+  st_transform(proj2) %>% 
+  st_set_precision(1e6) %>% 
+  st_union()
 
 # Load the data
 coop_clean <- read.csv(file = here("data", "clean_cooperatives_data.csv"),
