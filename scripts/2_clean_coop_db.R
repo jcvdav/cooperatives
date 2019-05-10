@@ -9,6 +9,8 @@
 
 # Load packages
 library(here)
+library(rnaturalearth)
+library(sf)
 library(raster)
 library(scales)
 library(tidyverse)
@@ -190,7 +192,7 @@ coop_clean <- cbind(coop_text, coop_numbers) %>%
          diversification = (number_of_species + multiple_gears)/2,
          change_anticipation_adaptation = (msc_certification + stock_assesment)/2,
          governmental_support = (number_gov_services + rule_of_law + contract_enforcement_rank)/3, 
-         material_style_of_life = -1 * poverty_index) %>% 
+         material_style_of_life = 1 - poverty_index) %>% 
   # Social sensitivity
   mutate(economic_dependence = percent_of_gdp_from_fishing, 
          food_dependence = short_catch_use_numeric) %>% 
@@ -202,7 +204,7 @@ coop_clean <- cbind(coop_text, coop_numbers) %>%
   # Ecological exposure
   mutate(temperature_change = temperature_change) %>% 
   # Ecological recovery potential
-  mutate(recovery_potential = -1 * recovery_potential,
+  mutate(recovery_potential = 1 - recovery_potential,
          mpa = mpa, 
          managed_fishery = managed_fishery) %>% 
   # Components
