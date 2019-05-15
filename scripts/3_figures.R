@@ -233,7 +233,8 @@ soc_biplot <- pca_data %>%
            groups = regions_soc_pca) +
   scale_x_continuous(limits = c(-0.7, 0.7)) +
   scale_y_continuous(limits = c(-0.7, 0.7)) +
-  scale_fill_brewer(palette = "Set1")
+  scale_fill_brewer(palette = "Set1") +
+  guides(fill = guide_legend(title = "Continent"))
 
 ggsave(plot = soc_biplot,
        filename = here("docs", "img", "soc_biplot.png"),
@@ -241,6 +242,20 @@ ggsave(plot = soc_biplot,
        height = 5)
 
 ## Ecological PCA
+
+regions_eco_pca <- pca_data %>%
+  dplyr::select(region,
+                sea_temp_vulnerability,
+                overfishing,
+                species_suceptibility,
+                temperature_change,
+                recovery_potential,
+                mpa,
+                managed_fishery) %>% 
+  magrittr::set_colnames(., value = str_replace_all(colnames(.), "_", " ")) %>% 
+  drop_na() %$%
+  region
+
 ecol_biplot <- pca_data %>% 
   dplyr::select(sea_temp_vulnerability,
                 overfishing,
@@ -253,9 +268,14 @@ ecol_biplot <- pca_data %>%
   drop_na() %>% 
   as.matrix() %>% 
   prcomp() %>% 
-  ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE,  varname.size = 3) +
+  ggbiplot(obs.scale = 1, var.scale = 1,
+           circle = TRUE,
+           varname.size = 3,
+           groups = regions_eco_pca) +
   scale_x_continuous(limits = c(-0.8, 0.8)) +
-  scale_y_continuous(limits = c(-0.8, 0.8))
+  scale_y_continuous(limits = c(-0.8, 0.8)) +
+  scale_fill_brewer(palette = "Set1") +
+  guides(fill = guide_legend(title = "Continent"))
 
 ggsave(plot = ecol_biplot,
        filename = here("docs", "img", "ecol_biplot.png"),
