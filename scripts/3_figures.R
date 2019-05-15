@@ -1,5 +1,7 @@
 # figures
 library(startR)
+library(ggrepel)
+library(magrittr)
 library(corrplot)
 library(rnaturalearth)
 library(sf)
@@ -25,7 +27,11 @@ coast <- ne_countries(scale = "small",
 
 # Load the data
 coop_clean <- read.csv(file = here("data", "clean_cooperatives_data.csv"),
-                       stringsAsFactors = F)
+                       stringsAsFactors = F) %>% 
+  mutate(region = countrycode(sourcevar = host_country,
+                              origin = "country.name",
+                              destination = "continent"),
+         region = ifelse(host_country == "Scotland", "Europe", region))
 
 
 # Create a data.frame for components data
@@ -75,8 +81,8 @@ components_histogram <- ggplot(data = components_data,
 
 ggsave(plot = components_histogram,
        filename = here("docs", "img", "components_histogram.png"),
-       width = 5,
-       height = 5)
+       width = 6,
+       height = 3)
 
 ## Final map
 
@@ -97,8 +103,25 @@ score_map <- coop_clean %>%
 
 ggsave(plot = score_map,
        filename = here("docs", "img", "score_map.png"),
+       width = 6,
+       height = 3)
+
+# Distribution of final scores
+
+score_dist <- coop_clean %>% 
+  dplyr::select(lon, lat, score) %>% 
+  drop_na() %>% 
+  ggplot(aes(x = score)) +
+  geom_density(color = "black",
+               size = 1,
+               fill = "steelblue",
+               alpha = 0.8) +
+  labs(x = "Score", y = "Density")
+
+ggsave(plot = score_dist,
+       filename = here("docs", "img", "score_dist.png"),
        width = 5,
-       height = 5)
+       height = 3)
 
 # Corrplot
 png(filename = here("docs", "img","components_corrplot.png"),
@@ -140,7 +163,8 @@ pca_data <- coop_clean %>%
                                        .$fishery_id,
                                        .$host_country,
                                        sep = "-")) %>%
-  dplyr::select(social_capital,
+  dplyr::select(region,
+                social_capital,
                 diversification,
                 change_anticipation_adaptation,
                 governmental_support,
@@ -162,6 +186,7 @@ png(filename = here("docs", "img","dimensions_corrplot.png"),
     res = 200)
 
 pca_data %>% 
+  select(-region) %>% 
   drop_na() %>% 
   cor() %>% 
   corrplot::corrplot(corr = .,
@@ -177,6 +202,19 @@ pca_data %>%
 
 dev.off()
 
+regions_soc_pca <- pca_data %>%
+  dplyr::select(region,
+                social_capital,
+                diversification,
+                change_anticipation_adaptation,
+                governmental_support,
+                material_style_of_life,
+                economic_dependence,
+                food_dependence) %>% 
+  magrittr::set_colnames(., value = str_replace_all(colnames(.), "_", " ")) %>% 
+  drop_na() %$%
+  region
+
 soc_biplot <- pca_data %>%
   dplyr::select(social_capital,
                 diversification,
@@ -189,9 +227,13 @@ soc_biplot <- pca_data %>%
   drop_na() %>% 
   as.matrix() %>% 
   prcomp() %>% 
-  ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE, varname.size = 3) +
+  ggbiplot(obs.scale = 1, var.scale = 1,
+           circle = TRUE,
+           varname.size = 3,
+           groups = regions_soc_pca) +
   scale_x_continuous(limits = c(-0.7, 0.7)) +
-  scale_y_continuous(limits = c(-0.7, 0.7))
+  scale_y_continuous(limits = c(-0.7, 0.7)) +
+  scale_fill_brewer(palette = "Set1")
 
 ggsave(plot = soc_biplot,
        filename = here("docs", "img", "soc_biplot.png"),

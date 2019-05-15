@@ -136,7 +136,11 @@ ggbiplot <-
     }
     else {
       if (!is.null(df.u$groups)) {
-        g <- g + geom_point(aes(color = groups), alpha = alpha)
+        g <- g + geom_point(aes(fill = groups),
+                            color = "black",
+                            shape = 21,
+                            size = labels.size,
+                            alpha = alpha)
       }
       else {
         g <- g + geom_point(alpha = alpha)
