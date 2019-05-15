@@ -1,5 +1,4 @@
 # figures
-library(ggbiplot)
 library(startR)
 library(corrplot)
 library(rnaturalearth)
@@ -8,6 +7,8 @@ library(cowplot)
 library(ggridges)
 library(here)
 library(tidyverse)
+
+source(here("scripts", "ggbiplot.R"))
 
 update_geom_defaults(geom = "sf", new = list(fill = "gray90",
                                              color = "black",
@@ -65,11 +66,12 @@ ggsave(plot = components_map,
 
 # Histogram of components
 components_histogram <- ggplot(data = components_data,
-                               aes(x = value, y = variable_name)) +
-  geom_density_ridges(fill = "steelblue",
-                      alpha = 0.5) +
+       aes(x = value, y = ..scaled..,  fill = variable_name)) +
+  geom_density(alpha = 0.5) +
   ggtheme_plot() +
-  labs(x = "Score", y = "Component")
+  labs(x = "Score", y = "Density") +
+  guides(fill = guide_legend(title = "Component")) +
+  scale_fill_brewer(palette = "Set1")
 
 ggsave(plot = components_histogram,
        filename = here("docs", "img", "components_histogram.png"),
@@ -129,10 +131,9 @@ coop_clean %>%
 dev.off()
 
 
-
-
-
 ## PCA
+
+## Socioeconomic PCA
 
 pca_data <- coop_clean %>%
   magrittr::set_rownames(value = paste(.$original_order,
@@ -153,10 +154,28 @@ pca_data <- coop_clean %>%
                 recovery_potential,
                 mpa,
                 managed_fishery)
+
+png(filename = here("docs", "img","dimensions_corrplot.png"),
+    height = 6.5,
+    width = 6,
+    units = "in",
+    res = 200)
+
 pca_data %>% 
   drop_na() %>% 
   cor() %>% 
-  corrplot::corrplot(type = "lower", method = "ellipse", diag = F)
+  corrplot::corrplot(corr = .,
+                     type = "lower",
+                     method = "ellipse",
+                     diag = F,
+                     outline = T,
+                     tl.col = "black",
+                     # tl.srt = 0,
+                     cl.pos = "r",
+                     cl.cex = 1,
+                     cl.ratio = 0.5)
+
+dev.off()
 
 soc_biplot <- pca_data %>%
   dplyr::select(social_capital,
@@ -166,17 +185,20 @@ soc_biplot <- pca_data %>%
                 material_style_of_life,
                 economic_dependence,
                 food_dependence) %>% 
+  magrittr::set_colnames(., value = str_replace_all(colnames(.), "_", " ")) %>% 
   drop_na() %>% 
   as.matrix() %>% 
   prcomp() %>% 
-  ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
+  ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE, varname.size = 3) +
+  scale_x_continuous(limits = c(-0.7, 0.7)) +
+  scale_y_continuous(limits = c(-0.7, 0.7))
 
 ggsave(plot = soc_biplot,
        filename = here("docs", "img", "soc_biplot.png"),
        width = 5,
        height = 5)
 
-
+## Ecological PCA
 ecol_biplot <- pca_data %>% 
   dplyr::select(sea_temp_vulnerability,
                 overfishing,
@@ -185,10 +207,13 @@ ecol_biplot <- pca_data %>%
                 recovery_potential,
                 mpa,
                 managed_fishery) %>% 
+  magrittr::set_colnames(., value = str_replace_all(colnames(.), "_", " ")) %>% 
   drop_na() %>% 
   as.matrix() %>% 
   prcomp() %>% 
-  ggbiplot::ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE)
+  ggbiplot(obs.scale = 1, var.scale = 1, circle = TRUE,  varname.size = 3) +
+  scale_x_continuous(limits = c(-0.8, 0.8)) +
+  scale_y_continuous(limits = c(-0.8, 0.8))
 
 ggsave(plot = ecol_biplot,
        filename = here("docs", "img", "ecol_biplot.png"),

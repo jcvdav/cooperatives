@@ -157,7 +157,11 @@ coop <- read.csv(here("raw_data", "master_coop.csv"),
     # no poverty index for developed countries so for now I'm replacing them with a zero. We may need to look for updated values.
     poverty_index = ifelse(is.na(poverty_index), 0, poverty_index), 
     # transforming catch use for subsistance in numeric
-    short_catch_use_numeric = case_when(short_catch_use == "Subsistence" ~ 1,short_catch_use == "Local Market / Subsistence" ~ 1,short_catch_use == "Local Market" ~ 1, TRUE ~ 0), short_catch_use_numeric = ifelse(is.na(short_catch_use), NA, short_catch_use_numeric), 
+    short_catch_use_numeric = case_when(short_catch_use == "Subsistence" ~ 1,
+                                        short_catch_use == "Local Market / Subsistence" ~ 1,
+                                        short_catch_use == "Local Market" ~ 1,
+                                        TRUE ~ 0),
+    short_catch_use_numeric = ifelse(is.na(short_catch_use), NA, short_catch_use_numeric), 
     # creating a variable that adds the number of known coop behaviors (NAs are not considered)
     number_coop_behaviors = rowSums(.[8:25], na.rm=TRUE), 
     # creating a variable that adds the number of services known to be provided by the goverment (NAs are not considered)
@@ -167,7 +171,8 @@ coop <- read.csv(here("raw_data", "master_coop.csv"),
     # how old is the cooperative? (I'm assuming they are still operating bt 2013, when the paper was published)
     years_coop = 2013 - coop_formation_date, 
     # Is the fishery being managed?The opposite of OA
-    managed_fishery = ifelse(open_access == 1, 0, 1)) %>% 
+    managed_fishery = ifelse(open_access == 1, 0, 1),
+    percent_of_gdp_from_fishing = log(percent_of_gdp_from_fishing)) %>% 
   filter(!fish_type %in% c("Freshwater", "Freshwater & Diadromous")) %>% 
   left_join(coords, by = "fishery_id") %>%
   left_join(species_suceptibility, by = 'original_order') %>% 
